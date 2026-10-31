@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel de Control de Orquídeas</title>
+
+  <!-- Tailwind CSS (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- TODO: Supabase client (CDN) - descomenta cuando integres la API
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  -->
+</head>
+
+<body class="bg-gray-100 min-h-screen text-gray-800">
+
+  <!-- ===================== TOP BAR ===================== -->
+  <header class="bg-green-900 text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-2 font-bold text-lg whitespace-nowrap">
+        <span class="text-2xl">🌸</span> Panel de Control de Orquídeas
+      </div> 
+
+      <nav class="hidden md:flex items-center gap-6 text-sm">
+        <a href="#" data-target="vista-panel" class="font-semibold border-b-2 border-white pb-1">Panel</a>
+        <a href="#" data-target="vista-calendario" class="opacity-80 hover:opacity-100">Calendario de Riego</a>
+        <a href="#" data-target="vista-historicos" class="opacity-80 hover:opacity-100">Datos Históricos</a>
+        <a href="#" data-target="vista-sensores" class="opacity-80 hover:opacity-100">Sensores</a>
+        <a href="#" data-target="vista-configuracion" class="opacity-80 hover:opacity-100">Configuración</a>
+      </nav>
+
+      <div class="flex items-center gap-4">
+        <!-- Notificaciones -->
+        <button class="relative" aria-label="Notificaciones">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2a2 2 0 01-.6 1.4L4 17h5m6 0a3 3 0 11-6 0" />
+          </svg>
+          <span class="absolute -top-1 -right-1 bg-red-500 text-xs rounded-full h-4 w-4 flex items-center justify-center">2</span>
+        </button>
+        <!-- Avatar -->
+        <div class="h-9 w-9 rounded-full bg-green-600 border-2 border-white flex items-center justify-center font-semibold" title="Usuario">U</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================== MAIN GRID ===================== -->
+  <main class="max-w-7xl mx-auto p-4">
+    <div id="vista-panel" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- ============ COLUMNA IZQUIERDA ============ -->
+    <section class="flex flex-col gap-6">
+
+      <!-- Tarjetas de estado -->
+      <div class="flex flex-col gap-3">
+        <div class="bg-white rounded-xl shadow-md px-4 py-3 flex items-center justify-between">
+          <span class="text-sm text-gray-500">Estado</span>
+          <span class="flex items-center gap-2 font-semibold">
+            <span class="h-3 w-3 rounded-full bg-green-500"></span> Óptimo
+          </span>
+        </div>
+        <div class="bg-white rounded-xl shadow-md px-4 py-3 flex items-center justify-between">
+          <span class="text-sm text-gray-500">Conexión WiFi</span>
+          <span class="flex items-center gap-2 font-semibold">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8.1 15.5a5.5 5.5 0 017.8 0M4.9 12.3a10 10 0 0114.2 0M1.7 9.1a14.5 14.5 0 0120.6 0M12 19h.01" />
+            </svg>
+            Activa
+          </span>
+        </div>
+        <div class="bg-white rounded-xl shadow-md px-4 py-3 flex items-center justify-between">
+          <span class="text-sm text-gray-500">Dispositivo Actual</span>
+          <span class="font-semibold">Invernadero A</span>
+        </div>
+      </div>
+
+      <!-- Calendario de Riego (RF1, RF2) -->
+      <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="bg-green-900 text-white px-4 py-3 flex items-center justify-between">
+          <h2 class="font-semibold">Calendario de Riego <span class="text-xs opacity-70">(RF1, RF2)</span></h2>
+          <button class="bg-white text-green-900 text-sm font-semibold px-3 py-1 rounded-lg hover:bg-green-100">+ Agregar Evento</button>
+        </div>
+
+        <div class="p-4">
+          <!-- Mini calendario -->
+          <div class="flex items-center justify-between mb-2">
+            <button id="cal-prev" class="px-2 text-gray-500 hover:text-green-900" aria-label="Mes anterior">‹</button>
+            <span id="cal-title" class="font-semibold text-sm"></span>
+            <button id="cal-next" class="px-2 text-gray-500 hover:text-green-900" aria-label="Mes siguiente">›</button>
+          </div>
+          <div class="grid grid-cols-7 text-center text-xs text-gray-400 mb-1">
+            <span>Do</span><span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span>
+          </div>
+          <div id="cal-grid" class="grid grid-cols-7 gap-1 text-center text-sm"></div>
+
+          <!-- Próximo Riego -->
+          <h3 class="mt-5 mb-2 text-sm font-semibold text-gray-600">Próximo Riego</h3>
+          <ul id="next-watering-list" class="space-y-2 text-sm">
+            <!-- TODO: Fetch Supabase watering schedule events here and render this list -->
+            <li class="flex items-center gap-2 bg-green-50 rounded-lg px-3 py-2"><span>🔔</span> Hoy a las 4:00 PM</li>
+            <li class="flex items-center gap-2 bg-green-50 rounded-lg px-3 py-2"><span>🔔</span> Mañana a las 8:00 AM</li>
+            <li class="flex items-center gap-2 bg-green-50 rounded-lg px-3 py-2"><span>🔔</span> Jueves a las 4:00 PM</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ COLUMNA CENTRAL ============ -->
+    <section class="flex flex-col gap-6">
+
+      <!-- Datos en Tiempo Real (RF4, RF8) -->
+      <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="bg-green-900 text-white px-4 py-3">
+          <h2 class="font-semibold">Datos en Tiempo Real <span class="text-xs opacity-70">(RF4, RF8)</span></h2>
+        </div>
+        <div class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <!-- Humedad -->
+          <div class="flex flex-col items-center text-center">
+            <h3 class="font-semibold text-gray-600 mb-2">Humedad</h3>
+            <div class="relative h-40 w-40">
+              <canvas id="humidityDonut"></canvas>
+              <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <span id="humidity-value" class="text-3xl font-bold text-blue-500">82%</span>
+              </div>
+            </div>
+            <p class="mt-3 text-sm">Estado: <span class="font-semibold text-green-600">Óptimo</span></p>
+            <p class="text-sm text-gray-500">Objetivo: ~80%</p>
+          </div>
+
+          <!-- Temperatura -->
+          <div class="flex flex-col items-center text-center">
+            <h3 class="font-semibold text-gray-600 mb-2">Temperatura</h3>
+            <div class="relative h-40 w-40">
+              <canvas id="temperatureDonut"></canvas>
+              <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <span id="temperature-value" class="text-3xl font-bold text-orange-500">21.5°C</span>
+              </div>
+            </div>
+            <p class="mt-3 text-sm">Estado: <span class="font-semibold text-green-600">Óptimo</span></p>
+            <p class="text-sm text-gray-500">Rango: 18°C-24°C</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Integración de Sensores (RF3) -->
+      <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="bg-green-900 text-white px-4 py-3">
+          <h2 class="font-semibold">Integración de Sensores <span class="text-xs opacity-70">(RF3)</span></h2>
+        </div>
+        <ul class="p-4 space-y-3">
+          <!-- TODO: Fetch sensors list/status from Supabase and render here -->
+          <li class="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3">
+            <span class="flex items-center gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.1 15.5a5.5 5.5 0 017.8 0M4.9 12.3a10 10 0 0114.2 0M1.7 9.1a14.5 14.5 0 0120.6 0M12 19h.01" />
+              </svg>
+              <span class="font-medium">Sensor Wi-Fi 01</span>
+            </span>
+            <span class="flex items-center gap-2 text-sm text-green-600 font-semibold">
+              <span class="h-2.5 w-2.5 rounded-full bg-green-500"></span> Conectado
+            </span>
+          </li>
+          <li class="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3">
+            <span class="flex items-center gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7 8l10 8-5 4V4l5 4L7 16" />
+              </svg>
+              <span class="font-medium">Sensor Bluetooth 02</span>
+            </span>
+            <span class="flex items-center gap-2 text-sm text-green-600 font-semibold">
+              <span class="h-2.5 w-2.5 rounded-full bg-green-500"></span> Conectado
+            </span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============ COLUMNA DERECHA ============ -->
+    <section class="flex flex-col gap-6">
+
+      <!-- Historial de Condiciones Ambientales (RF5, RF6) -->
+      <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="bg-green-900 text-white px-4 py-3 flex items-center justify-between gap-2 flex-wrap">
+          <h2 class="font-semibold">Historial de Condiciones Ambientales <span class="text-xs opacity-70">(RF5, RF6)</span></h2>
+          <label class="text-xs flex items-center gap-2">
+            Intervalo de Registro:
+            <select id="log-interval" class="bg-white text-green-900 text-xs rounded-md px-2 py-1">
+              <option value="1">Cada 1 hora</option>
+              <option value="3">Cada 3 horas</option>
+              <option value="6">Cada 6 horas</option>
+              <option value="24">Cada 24 horas</option>
+            </select>
+          </label>
+        </div>
+        <div class="p-4">
+          <div class="relative h-64">
+            <canvas id="historyChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Registros Recientes de la Base de Datos (RF6) -->
+      <div class="bg-white rounded-xl shadow-md p-4">
+        <h2 class="font-semibold mb-3">Registros Recientes de la Base de Datos <span class="text-xs text-gray-400">(RF6)</span></h2>
+        <table class="w-full text-sm text-left">
+          <thead>
+            <tr class="text-gray-500 border-b">
+              <th class="py-2 font-medium">Hora</th>
+              <th class="py-2 font-medium">Humedad</th>
+              <th class="py-2 font-medium">Temperatura</th>
+            </tr>
+          </thead>
+          <tbody id="logs-body" class="divide-y">
+            <!-- TODO: Fetch Supabase logs here and render rows (see renderLogs in app.js) -->
+            <tr><td class="py-2">08:10</td><td class="py-2">80%</td><td class="py-2">21.5°C</td></tr>
+            <tr><td class="py-2">08:00</td><td class="py-2">81%</td><td class="py-2">21.3°C</td></tr>
+            <tr><td class="py-2">07:50</td><td class="py-2">82%</td><td class="py-2">21.0°C</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    </div>
+
+    <!-- Vistas adicionales de navegación -->
+    <section id="vista-calendario" class="hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+          <div class="bg-green-900 text-white px-4 py-3">
+            <h2 class="font-semibold">Programar Nuevo Riego</h2>
+          </div>
+          <form id="form-riego" class="p-4 space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-2">Días de la semana</label>
+              <div class="flex flex-wrap gap-2">
+                <label class="cursor-pointer">
+                  <input type="checkbox" name="dias" value="Lunes" class="peer sr-only" />
+                  <span class="inline-flex items-center justify-center w-9 h-9 rounded-full border border-gray-300 text-sm font-semibold text-gray-600 peer-checked:bg-green-900 peer-checked:text-white peer-checked:border-green-900">L</span>
+                </label>
+                <label class="cursor-pointer">
+                  <input type="checkbox" name="dias" value="Martes" class="peer sr-only" />
+                  <span class="inline-flex items-center justify-center w-9 h-9 rounded-full border border-gray-300 text-sm font-semibold text-gray-600 peer-checked:bg-green-900 peer-checked:text-white peer-checked:border-green-900">M</span>
+                </label>
+                <label class="cursor-pointer">
+                  <input type="checkbox" name="dias" value="Miércoles" class="peer sr-only" />
+                  <span class="inline-flex items-center justify-center w-9 h-9 rounded-full border border-gray-300 text-sm font-semibold text-gray-600 peer-checked:bg-green-900 peer-checked:text-white peer-checked:border-green-900">M</span>
+                </label>
+                <label class="cursor-pointer">
+                  <input type="checkbox" name="dias" value="Jueves" class="peer sr-only" />
+                  <span class="inline-flex items-center justify-center w-9 h-9 rounded-full border border-gray-300 text-sm font-semibold text-gray-600 peer-checked:bg-green-900 peer-checked:text-white peer-checked:border-green-900">J</span>
+                </label>
+                <label class="cursor-pointer">
+                  <input type="checkbox" name="dias" value="Viernes" class="peer sr-only" />
+                  <span class="inline-flex items-center justify-center w-9 h-9 rounded-full border border-gray-300 text-sm font-semibold text-gray-600 peer-checked:bg-green-900 peer-checked:text-white peer-checked:border-green-900">V</span>
+                </label>
+                <label class="cursor-pointer">
+                  <input type="checkbox" name="dias" value="Sábado" class="peer sr-only" />
+                  <span class="inline-flex items-center justify-center w-9 h-9 rounded-full border border-gray-300 text-sm font-semibold text-gray-600 peer-checked:bg-green-900 peer-checked:text-white peer-checked:border-green-900">S</span>
+                </label>
+                <label class="cursor-pointer">
+                  <input type="checkbox" name="dias" value="Domingo" class="peer sr-only" />
+                  <span class="inline-flex items-center justify-center w-9 h-9 rounded-full border border-gray-300 text-sm font-semibold text-gray-600 peer-checked:bg-green-900 peer-checked:text-white peer-checked:border-green-900">D</span>
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <label for="hora-riego" class="block text-sm font-medium text-gray-600 mb-2">Hora</label>
+              <input id="hora-riego" name="hora" type="time" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-700" />
+            </div>
+
+            <div>
+              <label for="notas-riego" class="block text-sm font-medium text-gray-600 mb-2">Notas (opcional)</label>
+              <textarea id="notas-riego" name="notas" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-700" placeholder="Ej. Regar con agua a temperatura ambiente"></textarea>
+            </div>
+
+            <button type="submit" class="w-full bg-green-900 text-white font-semibold py-2 rounded-lg hover:bg-green-800 transition-colors">Guardar Programación</button>
+          </form>
+        </div>
+        <div class="bg-white rounded-xl shadow-md overflow-hidden lg:col-span-2">
+          <div class="bg-green-900 text-white px-4 py-3">
+            <h2 class="font-semibold">Próximos Riegos</h2>
+          </div>
+          <div class="p-4">
+            <ul id="lista-proximos-riegos" class="space-y-3">
+              <li class="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3">
+                <div class="flex items-center gap-3">
+                  <span class="text-blue-500 text-xl" aria-hidden="true">💧</span>
+                  <div>
+                    <p class="font-medium text-gray-800">Lunes</p>
+                    <p class="text-sm text-gray-500">08:00 AM</p>
+                  </div>
+                </div>
+                <button type="button" class="text-red-500 hover:text-red-700 text-lg" aria-label="Eliminar riego">🗑️</button>
+              </li>
+              <li class="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3">
+                <div class="flex items-center gap-3">
+                  <span class="text-blue-500 text-xl" aria-hidden="true">💧</span>
+                  <div>
+                    <p class="font-medium text-gray-800">Miércoles</p>
+                    <p class="text-sm text-gray-500">07:30 AM</p>
+                  </div>
+                </div>
+                <button type="button" class="text-red-500 hover:text-red-700 text-lg" aria-label="Eliminar riego">🗑️</button>
+              </li>
+              <li class="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3">
+                <div class="flex items-center gap-3">
+                  <span class="text-blue-500 text-xl" aria-hidden="true">💧</span>
+                  <div>
+                    <p class="font-medium text-gray-800">Viernes</p>
+                    <p class="text-sm text-gray-500">06:45 PM</p>
+                  </div>
+                </div>
+                <button type="button" class="text-red-500 hover:text-red-700 text-lg" aria-label="Eliminar riego">🗑️</button>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="vista-historicos" class="hidden">
+      <div class="space-y-6">
+        <div class="bg-white rounded-xl shadow-md p-4">
+          <form id="form-filtros-historicos" class="flex flex-col md:flex-row gap-4 items-end">
+            <div class="flex-1">
+              <label for="fecha-inicio" class="block text-sm font-medium text-gray-600 mb-1">Fecha Inicio</label>
+              <input id="fecha-inicio" name="fechaInicio" type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-700" />
+            </div>
+            <div class="flex-1">
+              <label for="fecha-fin" class="block text-sm font-medium text-gray-600 mb-1">Fecha Fin</label>
+              <input id="fecha-fin" name="fechaFin" type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-700" />
+            </div>
+            <div class="flex-1">
+              <label for="frecuencia-historicos" class="block text-sm font-medium text-gray-600 mb-1">Frecuencia</label>
+              <select id="frecuencia-historicos" name="frecuencia" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-700">
+                <option value="1">Cada 1 hora</option>
+                <option value="6">Cada 6 horas</option>
+                <option value="12">Cada 12 horas</option>
+                <option value="24">Diario</option>
+              </select>
+            </div>
+            <button type="submit" class="bg-green-900 text-white font-semibold px-4 py-2 rounded-lg hover:bg-green-800 transition-colors whitespace-nowrap">Filtrar Datos</button>
+          </form>
+        </div>
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+          <div class="bg-green-900 text-white px-4 py-3">
+            <h2 class="font-semibold">Evolución de Humedad y Temperatura</h2>
+          </div>
+          <div class="p-4">
+            <div class="relative h-80">
+              <canvas id="historicalChartTab"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+          <div class="bg-green-900 text-white px-4 py-3 flex items-center justify-between">
+            <h2 class="font-semibold">Registro Detallado</h2>
+            <button type="button" id="btn-exportar-csv" class="flex items-center gap-2 bg-white text-green-900 text-xs font-semibold px-3 py-1 rounded-lg hover:bg-green-100 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+              </svg>
+              Exportar CSV
+            </button>
+          </div>
+          <div class="p-4 overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead>
+                <tr class="text-gray-500 border-b">
+                  <th class="py-2 font-medium">Fecha y Hora</th>
+                  <th class="py-2 font-medium">Dispositivo/Sensor</th>
+                  <th class="py-2 font-medium">Humedad (%)</th>
+                  <th class="py-2 font-medium">Temperatura (°C)</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y">
+                <tr class="hover:bg-gray-50">
+                  <td class="py-2">15/10/2026 08:00</td>
+                  <td class="py-2">Sensor Wi-Fi 01</td>
+                  <td class="py-2">82%</td>
+                  <td class="py-2">21.5°C</td>
+                </tr>
+                <tr class="hover:bg-gray-50">
+                  <td class="py-2">15/10/2026 14:00</td>
+                  <td class="py-2">Sensor Wi-Fi 01</td>
+                  <td class="py-2">79%</td>
+                  <td class="py-2">23.1°C</td>
+                </tr>
+                <tr class="hover:bg-gray-50">
+                  <td class="py-2">16/10/2026 08:00</td>
+                  <td class="py-2">Sensor Bluetooth 02</td>
+                  <td class="py-2">85%</td>
+                  <td class="py-2">20.8°C</td>
+                </tr>
+                <tr class="hover:bg-gray-50">
+                  <td class="py-2">16/10/2026 20:00</td>
+                  <td class="py-2">Sensor Bluetooth 02</td>
+                  <td class="py-2">80%</td>
+                  <td class="py-2">19.6°C</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="vista-sensores" class="hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Columna izquierda: dispositivos activos -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+          <div class="bg-green-900 text-white px-4 py-3">
+            <h2 class="font-semibold">Dispositivos Activos</h2>
+          </div>
+          <div class="p-4 space-y-4">
+            <div class="border border-gray-200 rounded-lg p-4 mb-4">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="font-semibold text-gray-800">ESP32 - Invernadero 01</p>
+                  <p class="text-sm text-gray-500">Tipo: Wi-Fi | MAC: 00:1B:44:11:3A:B7</p>
+                  <p class="text-sm text-green-600 font-semibold flex items-center gap-2 mt-1">
+                    <span class="h-2.5 w-2.5 rounded-full bg-green-500"></span> Conectado
+                  </p>
+                </div>
+                <button type="button" class="text-red-500 hover:text-red-700 text-sm font-semibold">Desvincular</button>
+              </div>
+            </div>
+
+            <div class="border border-gray-200 rounded-lg p-4 mb-4">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="font-semibold text-gray-800">ESP32 - Invernadero 02</p>
+                  <p class="text-sm text-gray-500">Tipo: Bluetooth | MAC: 00:1B:44:11:3A:C8</p>
+                  <p class="text-sm text-green-600 font-semibold flex items-center gap-2 mt-1">
+                    <span class="h-2.5 w-2.5 rounded-full bg-green-500"></span> Conectado
+                  </p>
+                </div>
+                <button type="button" class="text-red-500 hover:text-red-700 text-sm font-semibold">Desvincular</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Columna derecha: vincular nuevo sensor -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+          <div class="bg-green-900 text-white px-4 py-3">
+            <h2 class="font-semibold">Añadir Nuevo Dispositivo</h2>
+          </div>
+          <form id="form-sensor" class="p-4 space-y-4">
+            <div>
+              <label for="nombre-sensor" class="block text-sm font-medium text-gray-600 mb-2">Nombre del Dispositivo</label>
+              <input id="nombre-sensor" name="nombre" type="text" required placeholder="Ej. Sector B" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-700" />
+            </div>
+
+            <div>
+              <label for="tipo-conexion" class="block text-sm font-medium text-gray-600 mb-2">Tipo de Conexión</label>
+              <select id="tipo-conexion" name="tipo" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-700">
+                <option value="Wi-Fi">Wi-Fi</option>
+                <option value="Bluetooth">Bluetooth</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="mac-sensor" class="block text-sm font-medium text-gray-600 mb-2">Dirección MAC de la placa</label>
+              <input id="mac-sensor" name="mac" type="text" required placeholder="00:1B:44:11:3A:B7" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-700" />
+            </div>
+
+            <button type="submit" class="w-full bg-green-900 text-white font-semibold py-2 rounded-lg hover:bg-green-800 transition-colors">Vincular Sensor</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section id="vista-configuracion" class="hidden">
+      <div class="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Columna izquierda: perfil -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+          <div class="bg-green-900 text-white px-4 py-3">
+            <h2 class="font-semibold">Datos del Perfil</h2>
+          </div>
+          <form id="form-perfil" class="p-4 space-y-4">
+            <div>
+              <label for="nombre-completo" class="block text-sm font-medium text-gray-600 mb-2">Nombre Completo</label>
+              <input id="nombre-completo" name="nombre" type="text" value="Nicol Neira" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-700" />
+            </div>
+            <div>
+              <label for="correo-perfil" class="block text-sm font-medium text-gray-600 mb-2">Correo Electrónico</label>
+              <input id="correo-perfil" name="correo" type="email" value="nicol@orchidhub.cl" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-700" />
+            </div>
+            <button type="submit" class="w-full bg-green-900 text-white font-semibold py-2 rounded-lg hover:bg-green-800 transition-colors">Actualizar Perfil</button>
+          </form>
+        </div>
+
+        <!-- Columna derecha: seguridad -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+          <div class="bg-green-900 text-white px-4 py-3">
+            <h2 class="font-semibold">Seguridad</h2>
+          </div>
+          <div class="p-4 space-y-4">
+            <form id="form-seguridad" class="space-y-4">
+              <div>
+                <label for="password-actual" class="block text-sm font-medium text-gray-600 mb-2">Contraseña Actual</label>
+                <input id="password-actual" name="passwordActual" type="password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-700" />
+              </div>
+              <div>
+                <label for="password-nueva" class="block text-sm font-medium text-gray-600 mb-2">Nueva Contraseña</label>
+                <input id="password-nueva" name="passwordNueva" type="password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-700" />
+              </div>
+              <div>
+                <label for="password-confirmar" class="block text-sm font-medium text-gray-600 mb-2">Confirmar Nueva Contraseña</label>
+                <input id="password-confirmar" name="passwordConfirmar" type="password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-700" />
+              </div>
+              <button type="submit" class="w-full bg-green-900 text-white font-semibold py-2 rounded-lg hover:bg-green-800 transition-colors">Cambiar Contraseña</button>
+            </form>
+
+            <hr class="border-gray-200" />
+
+            <button type="button" class="w-full bg-transparent text-red-600 font-semibold py-2 rounded-lg border border-red-600 hover:bg-red-50 transition-colors">Cerrar Sesión</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
