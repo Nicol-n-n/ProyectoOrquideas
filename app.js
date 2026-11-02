@@ -1,10 +1,9 @@
 /* =====================================================
- * CONFIG SUPABASE (TODO)
+ * CONFIG SUPABASE
  * ===================================================== */
-// TODO: Initialize Supabase client here
-// const SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';
-// const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY';
-// const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_URL = 'TU_URL_AQUI';
+const SUPABASE_ANON_KEY = 'TU_ANON_KEY_AQUI';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /* =====================================================
  * MINI CALENDARIO (simulado)
