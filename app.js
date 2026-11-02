@@ -3,7 +3,12 @@
  * ===================================================== */
 const SUPABASE_URL = 'TU_URL_AQUI';
 const SUPABASE_ANON_KEY = 'TU_ANON_KEY_AQUI';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let supabase = null;
+try {
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} catch (error) {
+  console.warn('Supabase no inicializado (credenciales temporales):', error);
+}
 
 /* =====================================================
  * MINI CALENDARIO (simulado)
